@@ -107,7 +107,7 @@ csharp_indent_block_contents = true
 csharp_indent_braces = false
 csharp_indent_case_contents_when_block = true
 
-csharp_space_after_cast = true
+csharp_space_after_cast = false
 csharp_space_after_keywords_in_control_flow_statements = true
 csharp_space_between_parentheses =
 csharp_space_before_colon_in_inheritance_clause = true
