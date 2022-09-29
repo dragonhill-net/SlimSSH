@@ -1,0 +1,5 @@
+{
+    "host": "127.0.0.1",
+    "port": 10022,
+    "image": "ghcr.io/dragonhill-net/ssh-test-container:main-9"
+}

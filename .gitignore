@@ -4,5 +4,6 @@
 
 [oO]bj/
 [bB]in/
+.local/
 
 *.user
