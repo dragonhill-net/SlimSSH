@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "dragonhill.devops.cli": {
+      "version": "0.4.0",
+      "commands": [
+        "devops-cli"
+      ]
+    }
+  }
+}

@@ -1,0 +1,8 @@
+meta:
+  repositoryUrl: https://api.nuget.org/v3/index.json
+  package: Dragonhill.DevOps.Meta
+  usePrerelease: false
+  languages:
+    - cs
+    - yaml
+    - cpp
