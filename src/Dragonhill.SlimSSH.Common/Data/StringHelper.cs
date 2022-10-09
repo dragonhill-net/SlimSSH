@@ -6,8 +6,15 @@ public static class StringHelper
 {
     public static bool TryParseProtocolVersionExchangeString(ReadOnlySpan<byte> input, out string str)
     {
-        str = Encoding.ASCII.GetString(input);
+        // Using UTF8 instead of ASCII as the error replacement char of ASCII is '?' which would be valid
+        str = Encoding.UTF8.GetString(input);
 
-        return !str.Any(c => c == '-' || !char.IsAscii(c) || char.IsWhiteSpace(c) || char.IsControl(c));
+        if (str.Any(c => c == '-' || !char.IsAscii(c) || char.IsWhiteSpace(c) || char.IsControl(c)))
+        {
+            str = string.Empty;
+            return false;
+        }
+
+        return true;
     }
 }

@@ -18,8 +18,7 @@ public abstract class SshConnectionBase : ISshConnection
     private Task _pipeRunnerTask;
     private TaskCompletionSource? _initCompletionSource = new();
 
-    public string? ServerSoftwareVersion { get; private set; }
-    public string? ServerComment { get; private set; }
+    public ISshProtocolVersion? ServerVersion { get; private set; }
 
     public abstract Task Connect();
 
@@ -92,11 +91,12 @@ public abstract class SshConnectionBase : ISshConnection
                 switch (_state)
                 {
                     case SshConnectionState.New:
-                        if (TryReadProtocolVersionExchange(inputBuffer, out consumedRange))
+                        if (SshProtocolVersion.TryReadProtocolVersionExchange(inputBuffer, out consumedRange, out var serverVersion))
                         {
                             _state = SshConnectionState.ProtocolVersionExchangeDone;
                             _initCompletionSource!.SetResult();
                             _initCompletionSource = null;
+                            ServerVersion = serverVersion;
                         }
 
                         break;
@@ -121,87 +121,5 @@ public abstract class SshConnectionBase : ISshConnection
 
             } while (!inputBuffer.IsEmpty);
         }
-
-
-    }
-
-    private bool TryReadProtocolVersionExchange(ReadOnlySequence<byte> inputSequence, out SequencePosition? consumedRange)
-    {
-        var positionOfLineFeed = inputSequence.PositionOf((byte) '\n');
-
-        if (positionOfLineFeed == null)
-        {
-            if (inputSequence.Length >= Constants.ProtocolVersionExchangeMaxLineLength)
-            {
-                throw new SshException(Strings.ProtocolVersionExchange_LineTooLong);
-            }
-
-            consumedRange = null;
-            return false;
-        }
-
-        //Get the span of memory representing this line (excluding line feed as it is already verified)
-        var lineSequence = inputSequence.Slice(0, positionOfLineFeed.Value);
-        var lineLength = lineSequence.Length;
-
-        if (lineLength >= Constants.ProtocolVersionExchangeMaxLineLength)
-        {
-            throw new SshException(Strings.ProtocolVersionExchange_LineTooLong);
-        }
-
-        if (lineLength < 1)
-        {
-            throw new SshException(Strings.ProtocolVersionExchange_LineInvalid);
-        }
-
-        // As a line has a well defined max length (enforced above) it may safely allocated on the stack
-        Span<byte> lineBytes = stackalloc byte[(int)lineSequence.Length];
-        lineSequence.CopyTo(lineBytes);
-
-        // Check for the carriage return before the line feed
-        if (lineBytes[^1] != (byte)'\r')
-        {
-            throw new SshException(Strings.ProtocolVersionExchange_LineInvalid);
-        }
-
-        // Check if the line starts with SSH-, if not the implementation ignores the content as it is not the version string (length at least 'SSH-' + <CR>)
-        const int sshMinLength = 4 + 1;
-        if (lineLength < sshMinLength || lineBytes[0] != (byte)'S' || lineBytes[1] != (byte)'S' || lineBytes[2] != (byte)'H' || lineBytes[3] != (byte)'-')
-        {
-            consumedRange = inputSequence.GetPosition(1, positionOfLineFeed.Value);
-            return false;
-        }
-
-        // Check for a valid protocol version (currently must be "2.0")
-        const int sshVersionMinLength = sshMinLength + 3 + 1;
-        if (lineLength < sshVersionMinLength || lineBytes[4] != (byte)'2' || lineBytes[5] != (byte)'.' || lineBytes[6] != (byte)'0' || lineBytes[7] != (byte)'-')
-        {
-            throw new SshException(Strings.ProtocolVersionExchange_InvalidVersion);
-        }
-
-        var softwareVersionAndCommentsBytes = lineBytes[(sshVersionMinLength - 1)..^1];
-        var firstSpace = softwareVersionAndCommentsBytes.IndexOf((byte)' ');
-
-        var softwareVersionBytes = firstSpace >= 0 ? softwareVersionAndCommentsBytes[..firstSpace] : softwareVersionAndCommentsBytes;
-
-        if (softwareVersionBytes.Length == 0)
-        {
-            throw new SshException(Strings.ProtocolVersionExchange_InvalidSoftwareVersion);
-        }
-
-        if (!StringHelper.TryParseProtocolVersionExchangeString(softwareVersionBytes, out var serverSoftwareVersion))
-        {
-            throw new SshException(Strings.ProtocolVersionExchange_InvalidSoftwareVersion);
-        }
-        ServerSoftwareVersion = serverSoftwareVersion;
-
-        if (firstSpace >= 0)
-        {
-            var commentsBytes = softwareVersionAndCommentsBytes[(firstSpace + 1)..];
-            ServerComment = Encoding.ASCII.GetString(commentsBytes);
-        }
-
-        consumedRange = inputSequence.GetPosition(1, positionOfLineFeed.Value);
-        return true;
     }
 }
