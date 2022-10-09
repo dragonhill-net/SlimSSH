@@ -56,7 +56,10 @@ public sealed class TestSettings
         {
             var path = Path.Combine(devopsDir.Value, "integration-test-settings.json");
             var jsonBytes = File.ReadAllBytes(path);
-            return JsonSerializer.Deserialize<IntegrationTestSettingsDto>(jsonBytes) ?? throw new InvalidOperationException($"Could not deserialize integration test settings from '{path}'");
+
+            var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
+            return JsonSerializer.Deserialize<IntegrationTestSettingsDto>(jsonBytes, options) ?? throw new InvalidOperationException($"Could not deserialize integration test settings from '{path}'");
         });
 
         _sshHost = new Lazy<string>(() => Environment.GetEnvironmentVariable("SLIM_SSH_TESTS_SSH_HOST") ?? integrationTestSettings.Value.Host);

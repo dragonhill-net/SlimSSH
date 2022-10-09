@@ -19,15 +19,24 @@
         <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
     </resheader>
     <data name="ProtocolVersionExchange_LineTooLong" xml:space="preserve">
-        <value>A line of the protocol version exchange is too long.</value>
+        <value>A line of the protocol version exchange is too long</value>
     </data>
     <data name="ProtocolVersionExchange_LineInvalid" xml:space="preserve">
-        <value>A line of the protocol version exchange is invalid.</value>
+        <value>A line of the protocol version exchange is invalid</value>
     </data>
     <data name="ProtocolVersionExchange_InvalidVersion" xml:space="preserve">
-        <value>The version in protocol version exchange is invalid or unsupported.</value>
+        <value>The version in protocol version exchange is invalid or unsupported</value>
     </data>
     <data name="ProtocolVersionExchange_InvalidSoftwareVersion" xml:space="preserve">
-        <value>The software version in protocol version exchange was invalid.</value>
+        <value>The software version in protocol version exchange was invalid</value>
+    </data>
+    <data name="SshConnectionBase_NotStarted" xml:space="preserve">
+        <value>The SSH connection was not started</value>
+    </data>
+    <data name="SshConnectionBase_ConnectCalledTwice" xml:space="preserve">
+        <value>Connect has already been called</value>
+    </data>
+    <data name="SshConnectionBase_ClosedUnexpectedly" xml:space="preserve">
+        <value>The connection has been closed unexpectedly</value>
     </data>
 </root>

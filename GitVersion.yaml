@@ -1,0 +1,24 @@
+major-version-bump-message: "^(breaking|major):"
+minor-version-bump-message: "^(feat|minor):"
+patch-version-bump-message: "^(bug|fix|patch):"
+
+commit-message-incrementing: Enabled
+mode: ContinuousDelivery
+
+branches:
+  release:
+    regex: ^release$
+    mode: ContinuousDelivery
+    tag: ''
+    source-branches: [ 'develop' ]
+    tracks-release-branches: false
+    is-release-branch: true
+    increment: Inherit
+  develop:
+    regex: ^dev$
+    mode: ContinuousDelivery
+    tag: pre
+    source-branches: []
+    tracks-release-branches: true
+    is-release-branch: false
+    increment: Inherit

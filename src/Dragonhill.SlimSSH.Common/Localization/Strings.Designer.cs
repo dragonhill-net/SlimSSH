@@ -68,5 +68,23 @@ namespace Dragonhill.SlimSSH.Localization {
                 return ResourceManager.GetString("ProtocolVersionExchange_InvalidSoftwareVersion", resourceCulture);
             }
         }
+        
+        internal static string SshConnectionBase_NotStarted {
+            get {
+                return ResourceManager.GetString("SshConnectionBase_NotStarted", resourceCulture);
+            }
+        }
+        
+        internal static string SshConnectionBase_ConnectCalledTwice {
+            get {
+                return ResourceManager.GetString("SshConnectionBase_ConnectCalledTwice", resourceCulture);
+            }
+        }
+        
+        internal static string SshConnectionBase_ClosedUnexpectedly {
+            get {
+                return ResourceManager.GetString("SshConnectionBase_ClosedUnexpectedly", resourceCulture);
+            }
+        }
     }
 }
