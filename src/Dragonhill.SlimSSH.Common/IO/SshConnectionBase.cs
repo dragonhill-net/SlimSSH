@@ -1,7 +1,9 @@
 using Dragonhill.SlimSSH.Data;
 using Dragonhill.SlimSSH.Exceptions;
 using Dragonhill.SlimSSH.Localization;
+using System.Buffers;
 using System.IO.Pipelines;
+using System.Threading.Channels;
 
 namespace Dragonhill.SlimSSH.IO;
 
@@ -10,7 +12,10 @@ namespace Dragonhill.SlimSSH.IO;
 /// </remarks>
 public abstract class SshConnectionBase : ISshConnection
 {
+    private const int TransmissionChannelCapacity = 15;
+
     private readonly Pipe _pipe = new();
+    private readonly Channel<(byte[], int)> _transmissionChannel = Channel.CreateBounded<(byte[], int)>(TransmissionChannelCapacity);
     private Task? _pipeRunnerTask;
     private SshConnectionState _state = SshConnectionState.Unconnected;
     private TaskCompletionSource? _currentStateCompletionSource;
@@ -23,6 +28,7 @@ public abstract class SshConnectionBase : ISshConnection
     internal void Abort()
     {
         _pipe.Reader.CancelPendingRead();
+        _transmissionChannel.Writer.TryComplete();
     }
 
     private async Task WaitForTaskOrTimeout(Task task, Task? timeoutTask)
@@ -57,6 +63,9 @@ public abstract class SshConnectionBase : ISshConnection
 
         _pipeRunnerTask = PipeRunner(stream);
 
+        // Queue the client version as first message to be sent
+        await _transmissionChannel.Writer.WriteAsync(SshProtocolVersion.WriteVersion(ArrayPool<byte>.Shared, GitVersionInformation.SemVer));
+
         try
         {
             await WaitForTaskOrTimeout(connectionCompletedSource.Task, remainingTimeout);
@@ -71,16 +80,27 @@ public abstract class SshConnectionBase : ISshConnection
     {
         try
         {
-            var pipeWriterTask = StreamReader(stream, _pipe.Writer);
-            var pipeReaderTask = DataProcessor(_pipe.Reader);
+            var tasks = new List<Task>(3)
+                {
+                    StreamReader(stream, _pipe.Writer),
+                    DataProcessor(_pipe.Reader),
+                    DataTransmitter(stream, _transmissionChannel.Reader)
+                };
 
-            var firstTask = await Task.WhenAny(pipeWriterTask, pipeReaderTask);
+            while (tasks.Count > 0)
+            {
+                var finishedTask = await Task.WhenAny(tasks);
 
-            // If there was an exception, propagate it
-            await firstTask;
+                // If there was an exception, propagate it
+                await finishedTask;
 
-            // If not await the other task (possibly propagating an exception)
-            await (firstTask != pipeWriterTask ? pipeReaderTask : pipeWriterTask);
+                tasks.Remove(finishedTask);
+
+                // If any of the data handling threads completes without exception also mark the pipe and channel as closed
+                await _pipe.Reader.CompleteAsync();
+                await _pipe.Writer.CompleteAsync();
+                _transmissionChannel.Writer.TryComplete();
+            }
 
             // If there is a wait for the current state to complete, try to cancel it
             var currentStateCompletionSource = _currentStateCompletionSource;
@@ -96,8 +116,39 @@ public abstract class SshConnectionBase : ISshConnection
         }
         finally
         {
+            await stream.DisposeAsync();
             await _pipe.Reader.CompleteAsync();
             await _pipe.Writer.CompleteAsync();
+            _transmissionChannel.Writer.TryComplete();
+        }
+    }
+
+    private async Task DataTransmitter(Stream stream, ChannelReader<(byte[], int)> reader)
+    {
+        var notDraining = true;
+
+        for (;;)
+        {
+            try
+            {
+                var (buffer, length) = await reader.ReadAsync();
+
+                if (notDraining)
+                {
+                    await stream.WriteAsync(buffer, 0, length);
+                }
+
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
+            catch (ChannelClosedException) // No more data available to read, channel is closed
+            {
+                return;
+            }
+            catch (ObjectDisposedException) // Stream is disposed, empty the channel to return all unsent messages
+            {
+                Abort();
+                notDraining = false;
+            }
         }
     }
 

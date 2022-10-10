@@ -3,6 +3,7 @@ using Dragonhill.SlimSSH.Localization;
 using Dragonhill.SlimSSH.TestHelpers;
 using FluentAssertions;
 using System;
+using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -35,6 +36,9 @@ public class SshConnectionBaseTests
         await instance.WaitClose(TimeSpan.FromHours(1));
 
         instance.IsClosed.Should().BeTrue();
+
+        var clientVersionString = Encoding.UTF8.GetString(instance.Stream.GetNextReceivedChunk());
+        clientVersionString.Should().Be($"SSH-2.0-{Constants.VersionName}_{GitVersionInformation.SemVer.Replace('-', '_')}\r\n");
     }
 
     [Fact]

@@ -5,7 +5,6 @@ using System.Buffers;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Dragonhill.SlimSSH.Data;
@@ -19,36 +18,38 @@ public class SshProtocolVersionTests
         };
 
     [Fact]
-    public async Task WriteVersion_WithComment()
+    public void WriteVersion_WithComment()
     {
         using var memoryStream = new MemoryStream();
         const string version = "0.1.2-pre+12345";
         const string comment = "This is some comment containing some spaces";
 
-        await SshProtocolVersion.WriteVersion(memoryStream, version, comment);
+        var (resultBytes, resultLength) = SshProtocolVersion.WriteVersion(ArrayPool<byte>.Shared, version, comment);
 
-        var resultBytes = memoryStream.ToArray();
-        var resultString = Encoding.UTF8.GetString(resultBytes);
+        var resultString = Encoding.UTF8.GetString(resultBytes, 0, resultLength);
 
         var expectedString = $"SSH-2.0-{Constants.VersionName}_{version.Replace('-', '_')} {comment}\r\n";
 
         resultString.Should().Be(expectedString);
+
+        ArrayPool<byte>.Shared.Return(resultBytes);
     }
 
     [Fact]
-    public async Task WriteVersion_WithoutComment()
+    public void WriteVersion_WithoutComment()
     {
         using var memoryStream = new MemoryStream();
         const string version = "104.272.43";
 
-        await SshProtocolVersion.WriteVersion(memoryStream, version);
+        var (resultBytes, resultLength) = SshProtocolVersion.WriteVersion(ArrayPool<byte>.Shared, version);
 
-        var resultBytes = memoryStream.ToArray();
-        var resultString = Encoding.UTF8.GetString(resultBytes);
+        var resultString = Encoding.UTF8.GetString(resultBytes, 0, resultLength);
 
         var expectedString = $"SSH-2.0-{Constants.VersionName}_{version.Replace('-', '_')}\r\n";
 
         resultString.Should().Be(expectedString);
+
+        ArrayPool<byte>.Shared.Return(resultBytes);
     }
 
     [Fact]

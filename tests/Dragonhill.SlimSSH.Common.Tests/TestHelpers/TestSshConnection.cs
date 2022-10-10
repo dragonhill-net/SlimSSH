@@ -1,6 +1,7 @@
 using Dragonhill.SlimSSH.Data;
 using Dragonhill.SlimSSH.IO;
 using System;
+using System.Buffers;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,7 +10,7 @@ namespace Dragonhill.SlimSSH.TestHelpers;
 
 public class TestSshConnection : SshConnectionBase
 {
-    private readonly MockChunkedStream _stream = new MockChunkedStream();
+    internal MockChunkedStream Stream { get; } = new MockChunkedStream();
 
     internal const string Version = "1.0-test";
     internal const string Comment = "some test comment";
@@ -17,18 +18,19 @@ public class TestSshConnection : SshConnectionBase
     public TestSshConnection SendServerVersion(bool? firstHalf = null)
     {
         using var memoryStream = new MemoryStream();
-        SshProtocolVersion.WriteVersion(memoryStream, Version, Comment);
-        var versionBuffer = memoryStream.ToArray();
-        var half = versionBuffer.Length / 2;
+        var (versionBuffer, length) = SshProtocolVersion.WriteVersion(ArrayPool<byte>.Shared, Version, Comment);
+        var half = length / 2;
         if (!firstHalf.HasValue || firstHalf.Value)
         {
-            _stream.AddReadDataChunk(versionBuffer[..half]);
+            Stream.AddReadDataChunk(versionBuffer[..half]);
         }
 
         if (!firstHalf.HasValue || !firstHalf.Value)
         {
-            _stream.AddReadDataChunk(versionBuffer[half..]);
+            Stream.AddReadDataChunk(versionBuffer[half..length]);
         }
+
+        ArrayPool<byte>.Shared.Return(versionBuffer);
 
         return this;
     }
@@ -36,18 +38,18 @@ public class TestSshConnection : SshConnectionBase
     public TestSshConnection SendInvalidSshVersion()
     {
         var bytes = Encoding.UTF8.GetBytes("SSH-3.0-version\r\n");
-        _stream.AddReadDataChunk(bytes);
+        Stream.AddReadDataChunk(bytes);
 
         return this;
     }
 
     public override async Task Connect(TimeSpan? timeout = null)
     {
-        await StartConnection(_stream, timeout != null ? Task.Delay(timeout.Value) : null);
+        await StartConnection(Stream, timeout != null ? Task.Delay(timeout.Value) : null);
     }
 
     public void CloseServer()
     {
-        _stream.AddReadDataChunk(Array.Empty<byte>());
+        Stream.AddReadDataChunk(Array.Empty<byte>());
     }
 }

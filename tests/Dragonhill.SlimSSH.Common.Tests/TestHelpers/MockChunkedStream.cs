@@ -6,10 +6,11 @@ namespace Dragonhill.SlimSSH.TestHelpers;
 
 internal class MockChunkedStream : Stream
 {
+    private readonly BlockingCollection<byte[]> _writtenDataChunks = new();
     private readonly BlockingCollection<byte[]> _readDataChunks = new();
     private byte[]? _remainingChunk = null;
 
-    internal void AddReadDataChunk(byte[]chunk)
+    internal void AddReadDataChunk(byte[] chunk)
     {
         _readDataChunks.Add(chunk);
     }
@@ -44,7 +45,7 @@ internal class MockChunkedStream : Stream
 
     public override void Write(byte[] buffer, int offset, int count)
     {
-        throw new NotImplementedException();
+        _writtenDataChunks.Add(buffer[offset..(offset + count)]);
     }
 
     public override bool CanRead => true;
@@ -56,5 +57,10 @@ internal class MockChunkedStream : Stream
     {
         get => throw new NotSupportedException();
         set => throw new NotSupportedException();
+    }
+
+    public byte[] GetNextReceivedChunk()
+    {
+        return _writtenDataChunks.Take();
     }
 }

@@ -17,27 +17,28 @@ public class SshProtocolVersion : ISshProtocolVersion
     public string SoftwareVersion { get; }
     public string? Comment { get; }
 
-    internal static ValueTask WriteVersion(Stream stream, string semVer, string? comment = null, CancellationToken cancellationToken = default)
+    internal static (byte[], int) WriteVersion(ArrayPool<byte> pool, string semVer, string? comment = null)
     {
         var versionString = $"SSH-2.0-{Constants.VersionName}_{semVer.Replace('-', '_')}";
         var versionStringByteCount = Encoding.UTF8.GetByteCount(versionString);
 
         var totalByteCount = versionStringByteCount + 2 + (comment != null ? 1 + Encoding.UTF8.GetByteCount(comment) : 0);
 
-        var byteBuffer = new byte[totalByteCount];
+        var byteBuffer = pool.Rent(totalByteCount);
+        var exactByteBufferSpan = byteBuffer.AsSpan(..totalByteCount);
 
-        var len = Encoding.UTF8.GetBytes(versionString, byteBuffer.AsSpan(..versionStringByteCount));
+        var len = Encoding.UTF8.GetBytes(versionString, exactByteBufferSpan[..versionStringByteCount]);
 
         if (comment != null)
         {
-            byteBuffer[versionStringByteCount] = (byte)' ';
-            Encoding.UTF8.GetBytes(comment, byteBuffer.AsSpan((versionStringByteCount + 1)..^2));
+            exactByteBufferSpan[versionStringByteCount] = (byte)' ';
+            Encoding.UTF8.GetBytes(comment, exactByteBufferSpan[(versionStringByteCount + 1)..^2]);
         }
 
-        byteBuffer[^2] = (byte)'\r';
-        byteBuffer[^1] = (byte)'\n';
+        exactByteBufferSpan[^2] = (byte)'\r';
+        exactByteBufferSpan[^1] = (byte)'\n';
 
-        return stream.WriteAsync(byteBuffer, cancellationToken);
+        return (byteBuffer, totalByteCount);
     }
 
     internal static bool TryReadProtocolVersionExchange(ReadOnlySequence<byte> inputSequence, out SequencePosition? consumedRange, out SshProtocolVersion? version)
