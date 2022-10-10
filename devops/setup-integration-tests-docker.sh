@@ -1,12 +1,14 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -e
 
 DOCKER_CONTAINER_NAME="slimssh-local-integration-test"
 
-HOST=$(jq -e -r .host ./integration-test-settings.json)
-PORT=$(jq -e .port ./integration-test-settings.json)
-IMAGE=$(jq -e -r .image ./integration-test-settings.json)
+SCRIPT_DIR=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
+
+HOST=$(jq -e -r .host "$SCRIPT_DIR/integration-test-settings.json")
+PORT=$(jq -e .port "$SCRIPT_DIR/integration-test-settings.json")
+IMAGE=$(jq -e -r .image "$SCRIPT_DIR/integration-test-settings.json")
 
 SERVER_KEY_DIR=$(realpath -m .local/server-keys)
 CLIENT_DIR=$(realpath -m .local/client)
