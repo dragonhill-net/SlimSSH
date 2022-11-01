@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Dragonhill.SlimSSH</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Dragonhill.SlimSSH.Common\Dragonhill.SlimSSH.Common.csproj" />
+      <ProjectReference Include="..\Dragonhill.SlimSSH.Encryption.ChaCha20Poly1305\Dragonhill.SlimSSH.Encryption.ChaCha20Poly1305.csproj" />
+      <ProjectReference Include="..\Dragonhill.SlimSSH.HostKey.Ed25519\Dragonhill.SlimSSH.HostKey.Ed25519.csproj" />
+      <ProjectReference Include="..\Dragonhill.SlimSSH.HostKey.Rsa\Dragonhill.SlimSSH.HostKey.Rsa.csproj" />
+      <ProjectReference Include="..\Dragonhill.SlimSSH.Kex.Curve25519Sha256LibsshOrg\Dragonhill.SlimSSH.Kex.Curve25519Sha256LibsshOrg.csproj" />
+    </ItemGroup>
+
+</Project>

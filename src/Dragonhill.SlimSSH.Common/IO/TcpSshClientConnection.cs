@@ -1,20 +1,24 @@
+using Dragonhill.SlimSSH.Algorithms;
 using System.Net.Sockets;
 
 namespace Dragonhill.SlimSSH.IO;
 
-public class TcpSshClientConnection : SshConnectionBase
+public class TcpSshClientConnection
 {
+    private readonly IAvailableSshAlgorithms _availableSshAlgorithms;
     private readonly string _host;
     private readonly ushort _port;
     private readonly TcpClient _tcpClient = new();
+    private SshTransportOperator? _sshTransportOperator;
 
-    public TcpSshClientConnection(string host, ushort port)
+    public TcpSshClientConnection(IAvailableSshAlgorithms availableSshAlgorithms, string host, ushort port)
     {
+        _availableSshAlgorithms = availableSshAlgorithms;
         _host = host;
         _port = port;
     }
 
-    public override async Task Connect(TimeSpan? timeout = null)
+    public async Task Connect(TimeSpan? timeout = null)
     {
         var timeoutTask = timeout != null ? Task.Delay(timeout.Value) : null;
         var connectTask = _tcpClient.ConnectAsync(_host, _port);
@@ -25,13 +29,19 @@ public class TcpSshClientConnection : SshConnectionBase
 
             if (firstTask == timeoutTask)
             {
-                Abort();
+                _tcpClient.Dispose();
                 throw new TimeoutException();
             }
         }
 
         await connectTask;
 
-        await StartConnection(_tcpClient.GetStream(), timeoutTask);
+        _sshTransportOperator = new SshTransportOperator(_availableSshAlgorithms, _tcpClient.GetStream(), (stream, algorithmContext) => (new SshPacketReader(stream, algorithmContext), new SshPacketWriter(stream, algorithmContext)));
+    }
+
+    public async Task TryReadPacket()
+    {
+        var packet = await _sshTransportOperator!.ReadPacket();
+        packet?.Dispose();
     }
 }

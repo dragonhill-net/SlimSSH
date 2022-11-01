@@ -1,7 +1,5 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dragonhill.SlimSSH.Abstractions", "src\Dragonhill.SlimSSH.Abstractions\Dragonhill.SlimSSH.Abstractions.csproj", "{A22ACEA1-EFE5-483F-B7F8-661A86D2CA48}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dragonhill.SlimSSH.Common", "src\Dragonhill.SlimSSH.Common\Dragonhill.SlimSSH.Common.csproj", "{63AB04A7-CA68-44FB-8CEF-A8B04DCBBF05}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dragonhill.SlimSSH.Common.Tests", "tests\Dragonhill.SlimSSH.Common.Tests\Dragonhill.SlimSSH.Common.Tests.csproj", "{7B63DB99-D576-42CB-8292-96036597988A}"
@@ -10,16 +8,24 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{72B53BF2
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dragonhill.SlimSSH.Tests.Common", "tests\Dragonhill.SlimSSH.Tests.Common\Dragonhill.SlimSSH.Tests.Common.csproj", "{B1694E0D-D318-4BD4-8315-AE48C1E901C5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestApp", "src\TestApp\TestApp.csproj", "{FB2948B9-0E34-4F04-90CC-B3CB004DED5D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dragonhill.SlimSSH.Encryption.ChaCha20Poly1305", "src\Dragonhill.SlimSSH.Encryption.ChaCha20Poly1305\Dragonhill.SlimSSH.Encryption.ChaCha20Poly1305.csproj", "{3455FDE0-44EC-47DE-B1EA-36F2A1484D8A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dragonhill.SlimSSH.Standard", "src\Dragonhill.SlimSSH.Standard\Dragonhill.SlimSSH.Standard.csproj", "{8B7C5254-6462-488C-8203-4E8C3EEA8D12}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dragonhill.SlimSSH.HostKey.Rsa", "src\Dragonhill.SlimSSH.HostKey.Rsa\Dragonhill.SlimSSH.HostKey.Rsa.csproj", "{EFA3600E-8E1D-452E-8B7F-24E38972A8AD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dragonhill.SlimSSH.Kex.Curve25519Sha256LibsshOrg", "src\Dragonhill.SlimSSH.Kex.Curve25519Sha256LibsshOrg\Dragonhill.SlimSSH.Kex.Curve25519Sha256LibsshOrg.csproj", "{54286690-552D-41EC-A6BF-0BD1DD616519}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dragonhill.SlimSSH.HostKey.Ed25519", "src\Dragonhill.SlimSSH.HostKey.Ed25519\Dragonhill.SlimSSH.HostKey.Ed25519.csproj", "{B84C1304-B297-4FAE-AEFF-5C8DD3F44D6D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{A22ACEA1-EFE5-483F-B7F8-661A86D2CA48}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A22ACEA1-EFE5-483F-B7F8-661A86D2CA48}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A22ACEA1-EFE5-483F-B7F8-661A86D2CA48}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A22ACEA1-EFE5-483F-B7F8-661A86D2CA48}.Release|Any CPU.Build.0 = Release|Any CPU
 		{63AB04A7-CA68-44FB-8CEF-A8B04DCBBF05}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{63AB04A7-CA68-44FB-8CEF-A8B04DCBBF05}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{63AB04A7-CA68-44FB-8CEF-A8B04DCBBF05}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -32,6 +38,30 @@ Global
 		{B1694E0D-D318-4BD4-8315-AE48C1E901C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B1694E0D-D318-4BD4-8315-AE48C1E901C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B1694E0D-D318-4BD4-8315-AE48C1E901C5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB2948B9-0E34-4F04-90CC-B3CB004DED5D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB2948B9-0E34-4F04-90CC-B3CB004DED5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB2948B9-0E34-4F04-90CC-B3CB004DED5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB2948B9-0E34-4F04-90CC-B3CB004DED5D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3455FDE0-44EC-47DE-B1EA-36F2A1484D8A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3455FDE0-44EC-47DE-B1EA-36F2A1484D8A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3455FDE0-44EC-47DE-B1EA-36F2A1484D8A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3455FDE0-44EC-47DE-B1EA-36F2A1484D8A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8B7C5254-6462-488C-8203-4E8C3EEA8D12}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B7C5254-6462-488C-8203-4E8C3EEA8D12}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B7C5254-6462-488C-8203-4E8C3EEA8D12}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B7C5254-6462-488C-8203-4E8C3EEA8D12}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EFA3600E-8E1D-452E-8B7F-24E38972A8AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EFA3600E-8E1D-452E-8B7F-24E38972A8AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EFA3600E-8E1D-452E-8B7F-24E38972A8AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EFA3600E-8E1D-452E-8B7F-24E38972A8AD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{54286690-552D-41EC-A6BF-0BD1DD616519}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{54286690-552D-41EC-A6BF-0BD1DD616519}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{54286690-552D-41EC-A6BF-0BD1DD616519}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{54286690-552D-41EC-A6BF-0BD1DD616519}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B84C1304-B297-4FAE-AEFF-5C8DD3F44D6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B84C1304-B297-4FAE-AEFF-5C8DD3F44D6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B84C1304-B297-4FAE-AEFF-5C8DD3F44D6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B84C1304-B297-4FAE-AEFF-5C8DD3F44D6D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{7B63DB99-D576-42CB-8292-96036597988A} = {72B53BF2-BFD2-46E0-958C-FDA817AB3719}

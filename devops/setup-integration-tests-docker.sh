@@ -46,4 +46,5 @@ printf "\n" >> "$CLIENT_DIR/known_hosts"
 sudo docker stop "$DOCKER_CONTAINER_NAME" || true
 sudo docker rm "$DOCKER_CONTAINER_NAME" || true
 
+# For debug logs append: /usr/sbin/sshd -ddd -e
 sudo docker run -d -v "$SERVER_KEY_DIR:/etc/ssh/keys:ro" -v "$CLIENT_DIR/authorized_keys:/home/ssh-test/.ssh/authorized_keys:ro" -p "$HOST:$PORT:22" --name "$DOCKER_CONTAINER_NAME" "$IMAGE"

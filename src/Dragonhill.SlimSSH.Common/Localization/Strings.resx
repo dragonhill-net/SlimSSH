@@ -39,4 +39,67 @@
     <data name="SshConnectionBase_ClosedUnexpectedly" xml:space="preserve">
         <value>The connection has been closed unexpectedly</value>
     </data>
+    <data name="Packet_TooLarge" xml:space="preserve">
+        <value>The packet size is larger than supported</value>
+    </data>
+    <data name="Packet_PayloadOutOfRange" xml:space="preserve">
+        <value>The payload is malformed and would exceed the given size</value>
+    </data>
+    <data name="NameList_InvalidCharacter" xml:space="preserve">
+        <value>The name list contains invalid characters</value>
+    </data>
+    <data name="NameList_EmptyString" xml:space="preserve">
+        <value>The name list contains an empty string</value>
+    </data>
+    <data name="Packet_NoMessageId" xml:space="preserve">
+        <value>The packet payload does not contain a message id</value>
+    </data>
+    <data name="Transport_ExpectedKexInit" xml:space="preserve">
+        <value>Expected message SSH_MSG_KEXINIT</value>
+    </data>
+    <data name="SshConnectionBase_ErrorTransmittingDisconnect" xml:space="preserve">
+        <value>Could not send disconnect message to server</value>
+    </data>
+    <data name="Packet_MacError" xml:space="preserve">
+        <value>Packet MAC error</value>
+    </data>
+    <data name="Transport_UnexpectedPacket" xml:space="preserve">
+        <value>Received an unexpected packet</value>
+    </data>
+    <data name="Transport_UnexpectedClosed" xml:space="preserve">
+        <value>Connection closed unexpectedly</value>
+    </data>
+    <data name="Transport_KexInitWhileKexActive" xml:space="preserve">
+        <value>Received a SSH_MSG_KEXINIT while a key exchange is already in progres</value>
+    </data>
+    <data name="Transport_UnexpectedNewKeys" xml:space="preserve">
+        <value>Received an unexpected SSH_MSG_NEWKEYS</value>
+    </data>
+    <data name="Transport_NoKexAlgorithmMatch" xml:space="preserve">
+        <value>Client and Server could not agree on a KEX algorithm</value>
+    </data>
+    <data name="Transport_NoKexCryptoMatch" xml:space="preserve">
+        <value>Client and Server could not agree on a crypto algorithm</value>
+    </data>
+    <data name="Transport_NoKexMacMatch" xml:space="preserve">
+        <value>Client and Server could not agree on a MAC algorithm</value>
+    </data>
+    <data name="Transport_NoKexUncompressedSupported" xml:space="preserve">
+        <value>Remote site does not support uncompressed transport</value>
+    </data>
+    <data name="Transport_ReservedNotZero" xml:space="preserve">
+        <value>Reserved field was not zero</value>
+    </data>
+    <data name="Transport_KexCouldNotCreateSharedSecret" xml:space="preserve">
+        <value>Could not create shared secret</value>
+    </data>
+    <data name="Transport_InvalidKeyFormat" xml:space="preserve">
+        <value>Received an key in an invalid format</value>
+    </data>
+    <data name="Transport_InvalidSignatureFormat" xml:space="preserve">
+        <value>Received an sigunature in an invalid format</value>
+    </data>
+    <data name="Transport_SignatureVerificationFailed" xml:space="preserve">
+        <value>Signature verification failed</value>
+    </data>
 </root>

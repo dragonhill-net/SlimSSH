@@ -14,7 +14,7 @@ namespace Dragonhill.SlimSSH.Localization {
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
     [System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class Strings {
+    public class Strings {
         
         private static System.Resources.ResourceManager resourceMan;
         
@@ -25,7 +25,7 @@ namespace Dragonhill.SlimSSH.Localization {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static System.Resources.ResourceManager ResourceManager {
+        public static System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.Equals(null, resourceMan)) {
                     System.Resources.ResourceManager temp = new System.Resources.ResourceManager("Dragonhill.SlimSSH.Localization.Strings", typeof(Strings).Assembly);
@@ -36,7 +36,7 @@ namespace Dragonhill.SlimSSH.Localization {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static System.Globalization.CultureInfo Culture {
+        public static System.Globalization.CultureInfo Culture {
             get {
                 return resourceCulture;
             }
@@ -45,45 +45,171 @@ namespace Dragonhill.SlimSSH.Localization {
             }
         }
         
-        internal static string ProtocolVersionExchange_LineTooLong {
+        public static string ProtocolVersionExchange_LineTooLong {
             get {
                 return ResourceManager.GetString("ProtocolVersionExchange_LineTooLong", resourceCulture);
             }
         }
         
-        internal static string ProtocolVersionExchange_LineInvalid {
+        public static string ProtocolVersionExchange_LineInvalid {
             get {
                 return ResourceManager.GetString("ProtocolVersionExchange_LineInvalid", resourceCulture);
             }
         }
         
-        internal static string ProtocolVersionExchange_InvalidVersion {
+        public static string ProtocolVersionExchange_InvalidVersion {
             get {
                 return ResourceManager.GetString("ProtocolVersionExchange_InvalidVersion", resourceCulture);
             }
         }
         
-        internal static string ProtocolVersionExchange_InvalidSoftwareVersion {
+        public static string ProtocolVersionExchange_InvalidSoftwareVersion {
             get {
                 return ResourceManager.GetString("ProtocolVersionExchange_InvalidSoftwareVersion", resourceCulture);
             }
         }
         
-        internal static string SshConnectionBase_NotStarted {
+        public static string SshConnectionBase_NotStarted {
             get {
                 return ResourceManager.GetString("SshConnectionBase_NotStarted", resourceCulture);
             }
         }
         
-        internal static string SshConnectionBase_ConnectCalledTwice {
+        public static string SshConnectionBase_ConnectCalledTwice {
             get {
                 return ResourceManager.GetString("SshConnectionBase_ConnectCalledTwice", resourceCulture);
             }
         }
         
-        internal static string SshConnectionBase_ClosedUnexpectedly {
+        public static string SshConnectionBase_ClosedUnexpectedly {
             get {
                 return ResourceManager.GetString("SshConnectionBase_ClosedUnexpectedly", resourceCulture);
+            }
+        }
+        
+        public static string Packet_TooLarge {
+            get {
+                return ResourceManager.GetString("Packet_TooLarge", resourceCulture);
+            }
+        }
+        
+        public static string Packet_PayloadOutOfRange {
+            get {
+                return ResourceManager.GetString("Packet_PayloadOutOfRange", resourceCulture);
+            }
+        }
+        
+        public static string NameList_InvalidCharacter {
+            get {
+                return ResourceManager.GetString("NameList_InvalidCharacter", resourceCulture);
+            }
+        }
+        
+        public static string NameList_EmptyString {
+            get {
+                return ResourceManager.GetString("NameList_EmptyString", resourceCulture);
+            }
+        }
+        
+        public static string Packet_NoMessageId {
+            get {
+                return ResourceManager.GetString("Packet_NoMessageId", resourceCulture);
+            }
+        }
+        
+        public static string Transport_ExpectedKexInit {
+            get {
+                return ResourceManager.GetString("Transport_ExpectedKexInit", resourceCulture);
+            }
+        }
+        
+        public static string SshConnectionBase_ErrorTransmittingDisconnect {
+            get {
+                return ResourceManager.GetString("SshConnectionBase_ErrorTransmittingDisconnect", resourceCulture);
+            }
+        }
+        
+        public static string Packet_MacError {
+            get {
+                return ResourceManager.GetString("Packet_MacError", resourceCulture);
+            }
+        }
+        
+        public static string Transport_UnexpectedPacket {
+            get {
+                return ResourceManager.GetString("Transport_UnexpectedPacket", resourceCulture);
+            }
+        }
+        
+        public static string Transport_UnexpectedClosed {
+            get {
+                return ResourceManager.GetString("Transport_UnexpectedClosed", resourceCulture);
+            }
+        }
+        
+        public static string Transport_KexInitWhileKexActive {
+            get {
+                return ResourceManager.GetString("Transport_KexInitWhileKexActive", resourceCulture);
+            }
+        }
+        
+        public static string Transport_UnexpectedNewKeys {
+            get {
+                return ResourceManager.GetString("Transport_UnexpectedNewKeys", resourceCulture);
+            }
+        }
+        
+        public static string Transport_NoKexAlgorithmMatch {
+            get {
+                return ResourceManager.GetString("Transport_NoKexAlgorithmMatch", resourceCulture);
+            }
+        }
+        
+        public static string Transport_NoKexCryptoMatch {
+            get {
+                return ResourceManager.GetString("Transport_NoKexCryptoMatch", resourceCulture);
+            }
+        }
+        
+        public static string Transport_NoKexMacMatch {
+            get {
+                return ResourceManager.GetString("Transport_NoKexMacMatch", resourceCulture);
+            }
+        }
+        
+        public static string Transport_NoKexUncompressedSupported {
+            get {
+                return ResourceManager.GetString("Transport_NoKexUncompressedSupported", resourceCulture);
+            }
+        }
+        
+        public static string Transport_ReservedNotZero {
+            get {
+                return ResourceManager.GetString("Transport_ReservedNotZero", resourceCulture);
+            }
+        }
+        
+        public static string Transport_KexCouldNotCreateSharedSecret {
+            get {
+                return ResourceManager.GetString("Transport_KexCouldNotCreateSharedSecret", resourceCulture);
+            }
+        }
+        
+        public static string Transport_InvalidKeyFormat {
+            get {
+                return ResourceManager.GetString("Transport_InvalidKeyFormat", resourceCulture);
+            }
+        }
+        
+        public static string Transport_InvalidSignatureFormat {
+            get {
+                return ResourceManager.GetString("Transport_InvalidSignatureFormat", resourceCulture);
+            }
+        }
+        
+        public static string Transport_SignatureVerificationFailed {
+            get {
+                return ResourceManager.GetString("Transport_SignatureVerificationFailed", resourceCulture);
             }
         }
     }
