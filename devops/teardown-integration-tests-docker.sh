@@ -2,7 +2,9 @@
 
 set -e
 
-DOCKER_CONTAINER_NAME="slimssh-local-integration-test"
+SCRIPT_DIR=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
 
-sudo docker stop "$DOCKER_CONTAINER_NAME" || true
-sudo docker rm "$DOCKER_CONTAINER_NAME" || true
+DOCKER_CONTAINER_NAME=$("$SCRIPT_DIR/load-config-value.sh" containerName)
+
+docker stop "$DOCKER_CONTAINER_NAME" || true
+docker rm "$DOCKER_CONTAINER_NAME" || true

@@ -2,13 +2,12 @@
 
 set -e
 
-DOCKER_CONTAINER_NAME="slimssh-local-integration-test"
-
 SCRIPT_DIR=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
 
-HOST=$(jq -e -r .host "$SCRIPT_DIR/integration-test-settings.json")
-PORT=$(jq -e .port "$SCRIPT_DIR/integration-test-settings.json")
-IMAGE=$(jq -e -r .image "$SCRIPT_DIR/integration-test-settings.json")
+DOCKER_CONTAINER_NAME=$("$SCRIPT_DIR/load-config-value.sh" containerName)
+HOST=$("$SCRIPT_DIR/load-config-value.sh" host)
+PORT=$("$SCRIPT_DIR/load-config-value.sh" port)
+IMAGE=$("$SCRIPT_DIR/load-config-value.sh" image)
 
 SERVER_KEY_DIR=$(realpath -m .local/server-keys)
 CLIENT_DIR=$(realpath -m .local/client)
@@ -43,8 +42,8 @@ sed -E "$SED_REGEX_EXTRACT_KEY" "$SERVER_KEY_DIR/ssh_host_rsa_key.pub" >> "$CLIE
 printf "\n" >> "$CLIENT_DIR/known_hosts"
 
 # In case it exists recreate it
-sudo docker stop "$DOCKER_CONTAINER_NAME" || true
-sudo docker rm "$DOCKER_CONTAINER_NAME" || true
+docker stop "$DOCKER_CONTAINER_NAME" 2>/dev/null || true
+docker rm "$DOCKER_CONTAINER_NAME" 2>/dev/null || true
 
 # For debug logs append: /usr/sbin/sshd -ddd -e
-sudo docker run -d -v "$SERVER_KEY_DIR:/etc/ssh/keys:ro" -v "$CLIENT_DIR/authorized_keys:/home/ssh-test/.ssh/authorized_keys:ro" -p "$HOST:$PORT:22" --name "$DOCKER_CONTAINER_NAME" "$IMAGE"
+docker run -d -v "$SERVER_KEY_DIR:/etc/ssh/keys:ro" -v "$CLIENT_DIR/authorized_keys:/home/ssh-test/.ssh/authorized_keys:ro" -p "$HOST:$PORT:22" --name "$DOCKER_CONTAINER_NAME" "$IMAGE"
