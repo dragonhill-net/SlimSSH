@@ -1,7 +1,5 @@
-using Dragonhill.SlimSSH.Data;
 using Dragonhill.SlimSSH.Exceptions;
 using Dragonhill.SlimSSH.Helpers;
-using Dragonhill.SlimSSH.IO;
 using Dragonhill.SlimSSH.Localization;
 using Dragonhill.SlimSSH.Protocol;
 using NSec.Cryptography;
@@ -24,13 +22,25 @@ public sealed class Curve25519Sha256LibsshOrgKexAlgorithm : IKexAlgorithm
         SHA256.HashData(data, hash);
     }
 
-    public ValueTask StartKex(IAlgorithmKexContext algorithmKexContext, ISafePacketSender safePacketSender)
+    public ValueTask StartKex(IKexContext kexContext)
     {
-        algorithmKexContext.NewKexAlgorithmContextBuffer(KeyAgreementAlgorithm.X25519.PrivateKeySize);
-        return safePacketSender.GenerateAndSend(StartKexPacketBuilder);
+        kexContext.ResetKexAlgorithmBufferBuffer(KeyAgreementAlgorithm.X25519.PrivateKeySize);
+        return kexContext.GenerateAndSend(StartKexPacketBuilder);
     }
 
-    private static void StartKexPacketBuilder(IAlgorithmKexContext context, ref SshPacketBuilder packetBuilder)
+    public bool WantsPacket(byte messageId) => messageId == (byte)Curve25519Sha256LibsshOrgMessageIds.KexEcdhReply;
+
+    public ValueTask HandlePacket(IKexContext algorithmKexContext, SshPacketPlaintextBuffer packetPlaintextBuffer)
+    {
+        if (packetPlaintextBuffer.MessageId != (byte)Curve25519Sha256LibsshOrgMessageIds.KexEcdhReply)
+        {
+            throw new SshException(Strings.Transport_UnexpectedPacket);
+        }
+
+        return HandleKexEcdhReply(algorithmKexContext, packetPlaintextBuffer);
+    }
+
+    private static void StartKexPacketBuilder(IKexContext kexContext, SshPacketPlaintextBuffer plaintextBuffer)
     {
         var parameters = new KeyCreationParameters { ExportPolicy = KeyExportPolicies.AllowPlaintextArchiving };
 
@@ -42,38 +52,28 @@ public sealed class Curve25519Sha256LibsshOrgKexAlgorithm : IKexAlgorithm
             throw new InvalidOperationException("Public key export error");
         }
 
+        var packetBuilder = new SshSerializer(ref plaintextBuffer);
+
         packetBuilder.WriteByte((byte)Curve25519Sha256LibsshOrgMessageIds.KexEcdhInit);
         packetBuilder.WriteBytesString(publicKeyBytes);
+        packetBuilder.Finish();
 
-        if (!key.TryExport(KeyBlobFormat.RawPrivateKey, context.GetKexAlgorithmContextBuffer(), out var privateKeyBlobSize) || privateKeyBlobSize != KeyAgreementAlgorithm.X25519.PrivateKeySize)
+        if (!key.TryExport(KeyBlobFormat.RawPrivateKey, kexContext.KexAlgorithmBuffer, out var privateKeyBlobSize) || privateKeyBlobSize != KeyAgreementAlgorithm.X25519.PrivateKeySize)
         {
             throw new InvalidOperationException("Private key export error");
         }
     }
 
-    public async ValueTask<bool> FilterPacket(IAlgorithmKexContext algorithmKexContext, byte messageId, ReadOnlyMemory<byte> packetPayload, ISafePacketSender safePacketSender)
+    private static ValueTask HandleKexEcdhReply(IKexContext kexContext, SshPacketPlaintextBuffer packetPlaintextBuffer)
     {
-        switch (messageId)
-        {
-            case (byte)Curve25519Sha256LibsshOrgMessageIds.KexEcdhReply:
-                await HandleKexEcdhReply(algorithmKexContext, packetPayload, safePacketSender);
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    private static ValueTask HandleKexEcdhReply(IAlgorithmKexContext algorithmKexContext, ReadOnlyMemory<byte> packetPayload, ISafePacketSender safePacketSender)
-    {
-        var deserializer = new SshPacketDeserializer(packetPayload.Span);
-        deserializer.ReadByte(); // message id
+        var deserializer = packetPlaintextBuffer.GetPayloadDeserializerAfterMessageId();
         var serverPublicHostKey = deserializer.ReadBytesString();
         var serverEphemeralPublicKeyBytes = deserializer.ReadBytesString();
         var exchangeHashSignature = deserializer.ReadBytesString();
         deserializer.CheckReadEverything();
 
         var serverEphemeralPublicKey = PublicKey.Import(KeyAgreementAlgorithm.X25519, serverEphemeralPublicKeyBytes, KeyBlobFormat.RawPublicKey);
-        using var clientEphemeralPrivateKey = Key.Import(KeyAgreementAlgorithm.X25519, algorithmKexContext.GetKexAlgorithmContextBuffer(), KeyBlobFormat.RawPrivateKey);
+        using var clientEphemeralPrivateKey = Key.Import(KeyAgreementAlgorithm.X25519, kexContext.KexAlgorithmBuffer, KeyBlobFormat.RawPrivateKey);
 
         var sharedSecretCreationParameters = new SharedSecretCreationParameters { ExportPolicy = KeyExportPolicies.AllowPlaintextArchiving };
 
@@ -86,9 +86,9 @@ public sealed class Curve25519Sha256LibsshOrgKexAlgorithm : IKexAlgorithm
 
         // compute exchange hash
         var ownVersion = SshProtocolVersion.OwnVersionWithoutCrLf;
-        var serverVersion = safePacketSender.PeerVersionBytesWithoutCrLf;
-        var clientKexInitPayload = algorithmKexContext.GetOwnKexInitPacketPayload();
-        var serverKexInitPayload = algorithmKexContext.GetPeerKexInitPacketPayload();
+        var serverVersion = kexContext.PeerVersionBytesWithoutCrLf;
+        var clientKexInitPayload = kexContext.OwnKexInitPayload;
+        var serverKexInitPayload = kexContext.PeerKexInitPayload;
 
         Span<byte> clientEphemeralPublicKeyBytes = stackalloc byte[KeyAgreementAlgorithm.X25519.PublicKeySize];
         if (!clientEphemeralPrivateKey.PublicKey.TryExport(KeyBlobFormat.RawPublicKey, clientEphemeralPublicKeyBytes, out var publicKeyBlobSize) || publicKeyBlobSize != KeyAgreementAlgorithm.X25519.PublicKeySize)
@@ -113,7 +113,8 @@ public sealed class Curve25519Sha256LibsshOrgKexAlgorithm : IKexAlgorithm
             + serverEphemeralPublicKeyBytes.Length
             + sharedSecretBytes.Length + 1; //If the first bit is set need to pad it
 
-        using var hashBuilder = new SshPacketBuilder(exchangeHashBaseLength);
+
+        var hashBuilder = new SshSerializer(stackalloc byte[exchangeHashBaseLength]);
         hashBuilder.WriteBytesString(ownVersion);
         hashBuilder.WriteBytesString(serverVersion);
         hashBuilder.WriteBytesString(clientKexInitPayload);
@@ -123,22 +124,22 @@ public sealed class Curve25519Sha256LibsshOrgKexAlgorithm : IKexAlgorithm
         hashBuilder.WriteBytesString(serverEphemeralPublicKeyBytes);
         hashBuilder.WriteUnsignedAsMPint(sharedSecretBytes);
 
-        var hashBaseBytes = hashBuilder.GetPayloadSpan();
+        var hashBaseBytes = hashBuilder.Finish();
 
-        var kexAlgorithm = algorithmKexContext.KexAlgorithm!;
+        var kexAlgorithm = kexContext.KexAlgorithm;
 
         Span<byte> exchangeHash = stackalloc byte[kexAlgorithm.HashSizeInBytes];
 
         kexAlgorithm.Hash(hashBaseBytes, exchangeHash);
 
-        var verificationResult = algorithmKexContext.HostKeyAlgorithm!.VerifyExchangeHash(serverPublicHostKey, exchangeHash, exchangeHashSignature);
+        var verificationResult = kexContext.HostKeyAlgorithm.VerifyExchangeHash(serverPublicHostKey, exchangeHash, exchangeHashSignature);
 
         if (!verificationResult)
         {
             throw new SshException(DisconnectReasonCode.KeyExchangeFailed, Strings.Transport_SignatureVerificationFailed);
         }
 
-        return ValueTask.CompletedTask;
+        return kexContext.FinishKeyExchange(sharedSecretBytes, exchangeHash);
     }
 
     private static readonly byte[] IdBytesArray =

@@ -6,8 +6,7 @@ var client = SshClientFactory.CreateNewTcp("127.0.0.1", 10022);
 try
 {
     await client.Connect();
-
-    await client.TryReadPacket();
+    await client.Shutdown();
 }
 catch (Exception exception)
 {

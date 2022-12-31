@@ -1,166 +1,92 @@
-using Dragonhill.SlimSSH.Exceptions;
-using Dragonhill.SlimSSH.IO;
-using Dragonhill.SlimSSH.Localization;
-using Dragonhill.SlimSSH.Protocol;
+﻿using System.Runtime.CompilerServices;
 
 namespace Dragonhill.SlimSSH.Algorithms;
 
-internal sealed class AlgorithmContext
+public class AlgorithmContext
 {
-    private readonly ISshTransportOperator _sshTransportOperator;
-    private readonly byte[] _contextArray;
-
-    private readonly int _kexAfterBytes;
-    private readonly long _kexAfterMilliseconds;
-
-    private int _writtenBytes;
-    private int _readBytes;
-    private long _nextKexAfterTicks;
-
+    private Memory<byte> _encryptionContext;
     private ICryptoAlgorithm _encryptionAlgorithm;
-    private ICryptoAlgorithm _decryptionAlgorithm;
+
+    private Memory<byte> _macGenerationContext;
     private IMacAlgorithm _macGenerationAlgorithm;
+
+    private Memory<byte> _decryptionContext;
+    private ICryptoAlgorithm _decryptionAlgorithm;
+
+    private Memory<byte> _macValidationContext;
     private IMacAlgorithm _macValidationAlgorithm;
 
-    private ICryptoAlgorithm? _nextEncryptionAlgorithm;
-    private ICryptoAlgorithm? _nextDecryptionAlgorithm;
-    private IMacAlgorithm? _nextMacGenerationAlgorithm;
-    private IMacAlgorithm? _nextMacValidationAlgorithm;
-
-    public IAvailableSshAlgorithms AvailableSshAlgorithms { get; }
-
-    public AlgorithmContext(IAvailableSshAlgorithms availableSshAlgorithms, ISshTransportOperator sshTransportOperator, int kexAfterBytes = Constants.KexAfterBytes, int kexAfterMilliseconds = Constants.KexAfterMilliseconds)
+    public AlgorithmContext()
     {
-        AvailableSshAlgorithms = availableSshAlgorithms;
-        _sshTransportOperator = sshTransportOperator;
+        _encryptionContext = Memory<byte>.Empty;
+        _encryptionAlgorithm = NoneCryptoAlgorithm.Instance;
 
-        _kexAfterBytes = kexAfterBytes;
-        _kexAfterMilliseconds = kexAfterMilliseconds;
+        _macGenerationContext = Memory<byte>.Empty;
+        _macGenerationAlgorithm = NoneMacAlgorithm.Instance;
 
-        _nextKexAfterTicks = long.MaxValue; // wait at least for the first key exchange
+        _decryptionContext = Memory<byte>.Empty;
+        _decryptionAlgorithm = NoneCryptoAlgorithm.Instance;
 
-        // twice the context size to have room for the algorithm in negotiation
-        _contextArray = new byte[2 * availableSshAlgorithms.Metrics.TotalContextSize];
-
-        _encryptionAlgorithm = _decryptionAlgorithm = NoneCryptoAlgorithm.Instance;
-        _macGenerationAlgorithm = _macValidationAlgorithm = NoneMacAlgorithm.Instance;
+        _macValidationContext = Memory<byte>.Empty;
+        _macValidationAlgorithm = NoneMacAlgorithm.Instance;
     }
 
-    public ValueTask OnPacketRead(ReadOnlySpan<byte> packetPlaintext, out bool stopReceiving)
+    internal void UpdateIncomingAlgorithms(Memory<byte> decryptionContext, ICryptoAlgorithm decryptionAlgorithm, Memory<byte> macValidationContext, IMacAlgorithm macValidationAlgorithm)
     {
-        _readBytes += packetPlaintext.Length + _macValidationAlgorithm.MacLength;
+        _decryptionContext.Span.Clear(); // clear the existing key material
+        _decryptionContext = decryptionContext;
+        _decryptionAlgorithm = decryptionAlgorithm;
 
-        switch (packetPlaintext[PacketConstants.MessageIdOffset])
-        {
-            case (byte)MessageId.NewKeys:
-                ActivateNextReadAlgorithms();
-                break;
-
-            case (byte)MessageId.Disconnect:
-                stopReceiving = true;
-                return ValueTask.CompletedTask;
-        }
-
-        stopReceiving = false;
-
-        if (_readBytes > _kexAfterBytes || Environment.TickCount64 >= _nextKexAfterTicks)
-        {
-            return _sshTransportOperator.RequestKeyExchange();
-        }
-
-        return ValueTask.CompletedTask;
+        _macValidationContext.Span.Clear(); // clear the existing key material
+        _macValidationContext = macValidationContext;
+        _macValidationAlgorithm = macValidationAlgorithm;
     }
 
-    public ValueTask OnPacketWrite(Span<byte> packetPlaintext, out bool stopSending)
+    internal void UpdateOutgoingAlgorithms(Memory<byte> encryptionContext, ICryptoAlgorithm encryptionAlgorithm, Memory<byte> macGenerationContext, IMacAlgorithm macGenerationAlgorithm)
     {
-        _writtenBytes += packetPlaintext.Length + _macGenerationAlgorithm.MacLength;
+        _encryptionContext.Span.Clear(); // clear the existing key material
+        _encryptionContext = encryptionContext;
+        _encryptionAlgorithm = encryptionAlgorithm;
 
-        switch (packetPlaintext[PacketConstants.MessageIdOffset])
-        {
-            case (byte)MessageId.NewKeys:
-                ActivateNextWriteAlgorithms();
-                break;
-
-            case (byte)MessageId.Disconnect:
-                stopSending = true;
-                return ValueTask.CompletedTask;
-        }
-
-        stopSending = false;
-
-        if (_writtenBytes > _kexAfterBytes || Environment.TickCount64 >= _nextKexAfterTicks)
-        {
-            return _sshTransportOperator.RequestKeyExchange();
-        }
-
-        return ValueTask.CompletedTask;
+        _macGenerationContext.Span.Clear(); // clear the existing key material
+        _macGenerationContext = macGenerationContext;
+        _macGenerationAlgorithm = macGenerationAlgorithm;
     }
 
-    private void ActivateNextReadAlgorithms()
-    {
-        if (_nextDecryptionAlgorithm == null || _nextMacValidationAlgorithm == null)
-        {
-            throw new SshException(DisconnectReasonCode.ProtocolError, Strings.Transport_UnexpectedNewKeys);
-        }
+    public int EncryptionAdditionalCryptoBytes => _encryptionAlgorithm.AdditionalCryptoBytes;
 
-        _decryptionAlgorithm = _nextDecryptionAlgorithm;
-        _macValidationAlgorithm = _nextMacValidationAlgorithm;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public byte EncryptionApplyPadding(Span<byte> paddingArea, int payloadLength) => _encryptionAlgorithm.ApplyPadding(paddingArea, payloadLength);
 
-        _nextDecryptionAlgorithm = null;
-        _nextMacValidationAlgorithm = null;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Encrypt(uint sequenceNumber, ReadOnlySpan<byte> binaryPacketPlaintext, Span<byte> ciphertext) => _encryptionAlgorithm.Encrypt(_encryptionContext.Span, sequenceNumber, binaryPacketPlaintext, ciphertext);
 
-        _readBytes = 0;
-    }
 
-    private void ActivateNextWriteAlgorithms()
-    {
-        if (_nextEncryptionAlgorithm == null || _nextMacGenerationAlgorithm == null)
-        {
-            throw new SshException(DisconnectReasonCode.ProtocolError, Strings.Transport_UnexpectedNewKeys);
-        }
 
-        _encryptionAlgorithm = _nextEncryptionAlgorithm;
-        _macGenerationAlgorithm = _nextMacGenerationAlgorithm;
-
-        _nextEncryptionAlgorithm = null;
-        _nextMacGenerationAlgorithm = null;
-
-        _writtenBytes = 0;
-    }
-
-    public int EncryptionEffectivePaddingSize => _encryptionAlgorithm.EffectivePaddingSize;
-
-    public void Encrypt(uint sequenceNumber, ReadOnlySpan<byte> binaryPacketPlaintext, Span<byte> ciphertext)
-    {
-        _encryptionAlgorithm.Encrypt(_contextArray.AsSpan(AvailableSshAlgorithms.Metrics.EncryptionContextOffset, _encryptionAlgorithm.ContextSize), sequenceNumber, binaryPacketPlaintext, ciphertext);
-    }
-
+    public int DecryptionAdditionalCryptoBytes => _decryptionAlgorithm.AdditionalCryptoBytes;
 
     public int RequiredBytesToDecryptLength => _decryptionAlgorithm.RequiredBytesToDecryptLength;
 
-    public uint DecryptLength(ReadOnlySpan<byte> ciphertext)
-    {
-        return _encryptionAlgorithm.DecryptLength(_contextArray.AsSpan(AvailableSshAlgorithms.Metrics.DecryptionContextOffset, _decryptionAlgorithm.ContextSize), ciphertext);
-    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public int DecryptLength(uint sequenceNumber, ReadOnlySpan<byte> ciphertext, Span<byte> plaintext) => _decryptionAlgorithm.DecryptLength(_decryptionContext.Span, sequenceNumber, ciphertext, plaintext);
 
-    public void Decrypt(ReadOnlySpan<byte> ciphertext, Span<byte> plaintext)
-    {
-        _encryptionAlgorithm.Decrypt(_contextArray.AsSpan(AvailableSshAlgorithms.Metrics.DecryptionContextOffset, _decryptionAlgorithm.ContextSize), ciphertext, plaintext);
-    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Decrypt(uint sequenceNumber, ReadOnlySpan<byte> ciphertext, Span<byte> plaintext) => _decryptionAlgorithm.Decrypt(_decryptionContext.Span, sequenceNumber, ciphertext, plaintext);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool ValidateDecryptionPayloadAndPaddingLength(int payloadLength, byte paddingAmount) => _decryptionAlgorithm.ValidatePayloadAndPaddingLength(payloadLength, paddingAmount);
+
 
 
     public int MacValidationLength => _macValidationAlgorithm.MacLength;
 
-    public bool ValidateMac(ReadOnlySpan<byte> sequenceNumberAndPacketPlaintext, ReadOnlySpan<byte> mac)
-    {
-        return _macValidationAlgorithm.Validate(_contextArray.AsSpan(AvailableSshAlgorithms.Metrics.MacValidationContextOffset, _macValidationAlgorithm.ContextSize), sequenceNumberAndPacketPlaintext, mac);
-    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool ValidateMac(ReadOnlySpan<byte> sequenceNumberAndPacketPlaintext, ReadOnlySpan<byte> mac) => _macValidationAlgorithm.Validate(_macValidationContext.Span, sequenceNumberAndPacketPlaintext, mac);
+
 
 
     public int MacGenerationLength => _macGenerationAlgorithm.MacLength;
 
-    public void GenerateMac(ReadOnlySpan<byte> sequenceNumberAndPacketPlaintext, Span<byte> mac)
-    {
-        _macGenerationAlgorithm.Generate(_contextArray.AsSpan(AvailableSshAlgorithms.Metrics.MacGenerationContextOffset, _macGenerationAlgorithm.ContextSize), sequenceNumberAndPacketPlaintext, mac);
-    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void GenerateMac(ReadOnlySpan<byte> sequenceNumberAndPacketPlaintext, Span<byte> mac) => _macGenerationAlgorithm.Generate(_macGenerationContext.Span, sequenceNumberAndPacketPlaintext, mac);
 }

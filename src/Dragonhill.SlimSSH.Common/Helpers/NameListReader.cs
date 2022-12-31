@@ -39,31 +39,14 @@ public readonly ref struct NameListReader
     private readonly ReadOnlySpan<byte> _content;
     //private readonly int _maxStringLength;
 
-    public NameListReader(ReadOnlySpan<byte> data, ref int offset)
+    public NameListReader(ReadOnlySpan<byte> content)
     {
-        var offsetWithLengthBytes = offset + 4;
+        _content = content;
 
-        if (data.Length < offsetWithLengthBytes) // Does it have enough bytes left for the length uint
+        if (content.IsEmpty)
         {
-            throw new SshException(Strings.Packet_PayloadOutOfRange);
-        }
-
-        var contentLength = (int)SshPrimitives.ReadUint32(data.Slice(offset, 4));
-
-        if (data.Length < offsetWithLengthBytes + contentLength)
-        {
-            throw new SshException(Strings.Packet_PayloadOutOfRange);
-        }
-
-        offset = offsetWithLengthBytes;
-
-        if (contentLength == 0)
-        {
-            _content = ReadOnlySpan<byte>.Empty;
             return;
         }
-
-        _content = data.Slice(offset, contentLength);
 
         var currentStringLength = 0;
         foreach (var contentByte in _content)
@@ -88,8 +71,6 @@ public readonly ref struct NameListReader
         {
             throw new SshException(Strings.NameList_EmptyString);
         }
-
-        offset += _content.Length;
     }
 
     public Iterator GetIterator()

@@ -1,13 +1,12 @@
 using Dragonhill.SlimSSH.Exceptions;
-using Dragonhill.SlimSSH.IO;
 using Dragonhill.SlimSSH.Localization;
 using Dragonhill.SlimSSH.Protocol;
 using System.Buffers;
 using System.Text;
 
-namespace Dragonhill.SlimSSH.Data;
+namespace Dragonhill.SlimSSH.Helpers;
 
-public readonly struct SshProtocolVersion
+public class SshProtocolVersion
 {
     public static readonly byte[] OwnVersion = GetVersionBytes(GitVersionInformation.SemVer);
     public static ReadOnlySpan<byte> OwnVersionWithoutCrLf => OwnVersion.AsSpan(0, OwnVersion.Length - 2);
@@ -51,7 +50,7 @@ public readonly struct SshProtocolVersion
         return byteBuffer;
     }
 
-    internal static bool TryReadProtocolVersionExchange(ReadOnlySequence<byte> inputSequence, out SequencePosition? consumedRange, out SshProtocolVersion? version)
+    internal static SshProtocolVersion? TryReadProtocolVersionExchange(ReadOnlySequence<byte> inputSequence, out SequencePosition? consumedRange)
     {
         var positionOfLineFeed = inputSequence.PositionOf((byte) '\n');
 
@@ -63,8 +62,7 @@ public readonly struct SshProtocolVersion
             }
 
             consumedRange = null;
-            version = null;
-            return false;
+            return null;
         }
 
         //Get the span of memory representing this line (excluding line feed as it is already verified)
@@ -96,8 +94,7 @@ public readonly struct SshProtocolVersion
         if (lineLength < sshMinLength || lineBytes[0] != (byte)'S' || lineBytes[1] != (byte)'S' || lineBytes[2] != (byte)'H' || lineBytes[3] != (byte)'-')
         {
             consumedRange = inputSequence.GetPosition(1, positionOfLineFeed.Value);
-            version = null;
-            return false;
+           return null;
         }
 
         // Check for a valid protocol version (currently must be "2.0")
@@ -121,9 +118,9 @@ public readonly struct SshProtocolVersion
 
         ValidateProtocolVersionExchangeString(softwareVersionBytes);
 
-        version = new SshProtocolVersion(lineBytes[..^1].ToArray(), softwareVersionOffset, firstSpace > 0 ? firstSpace + 1 : null);
+        var version = new SshProtocolVersion(lineBytes[..^1].ToArray(), softwareVersionOffset, firstSpace > 0 ? firstSpace + 1 : null);
         consumedRange = inputSequence.GetPosition(1, positionOfLineFeed.Value);
-        return true;
+        return version;
     }
 
     private static void ValidateProtocolVersionExchangeString(ReadOnlySpan<byte> input)

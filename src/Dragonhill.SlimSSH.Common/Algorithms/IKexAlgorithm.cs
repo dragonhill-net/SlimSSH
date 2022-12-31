@@ -1,4 +1,5 @@
-using Dragonhill.SlimSSH.IO;
+using Dragonhill.SlimSSH.Helpers;
+using Dragonhill.SlimSSH.Protocol;
 
 namespace Dragonhill.SlimSSH.Algorithms;
 
@@ -11,7 +12,9 @@ public interface IKexAlgorithm : IAlgorithmId
 
     void Hash(ReadOnlySpan<byte> data, Span<byte> hash);
 
-    ValueTask StartKex(IAlgorithmKexContext algorithmKexContext, ISafePacketSender safePacketSender);
+    ValueTask StartKex(IKexContext kexContext);
 
-    ValueTask<bool> FilterPacket(IAlgorithmKexContext algorithmKexContext, byte messageId, ReadOnlyMemory<byte> packetPayload, ISafePacketSender safePacketSender);
+    bool WantsPacket(byte messageId);
+
+    ValueTask HandlePacket(IKexContext kexContext, SshPacketPlaintextBuffer packetPlaintextBuffer);
 }

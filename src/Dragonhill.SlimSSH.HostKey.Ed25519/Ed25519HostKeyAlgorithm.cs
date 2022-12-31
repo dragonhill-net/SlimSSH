@@ -19,7 +19,7 @@ public class Ed25519HostKeyAlgorithm : IHostKeyAlgorithm
 
     public bool VerifyExchangeHash(ReadOnlySpan<byte> publicKey, ReadOnlySpan<byte> exchangeHash, ReadOnlySpan<byte> signature)
     {
-        var publicKeyReader = new SshPacketDeserializer(publicKey);
+        var publicKeyReader = new SshDeserializer(publicKey);
 
         if (!publicKeyReader.ReadBytesString().SequenceEqual(IdBytesArray))
         {
@@ -30,7 +30,7 @@ public class Ed25519HostKeyAlgorithm : IHostKeyAlgorithm
         publicKeyReader.CheckReadEverything();
 
 
-        var signatureReader = new SshPacketDeserializer(signature);
+        var signatureReader = new SshDeserializer(signature);
 
         if (!signatureReader.ReadBytesString().SequenceEqual(IdBytesArray))
         {

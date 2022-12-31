@@ -18,7 +18,7 @@ public abstract class RsaShaHostKeyAlgorithm : IHostKeyAlgorithm
 
     public bool VerifyExchangeHash(ReadOnlySpan<byte> publicKey, ReadOnlySpan<byte> exchangeHash, ReadOnlySpan<byte> signature)
     {
-        var signatureReader = new SshPacketDeserializer(signature);
+        var signatureReader = new SshDeserializer(signature);
 
         if (!signatureReader.ReadBytesString().SequenceEqual(IdBytes))
         {
@@ -29,7 +29,7 @@ public abstract class RsaShaHostKeyAlgorithm : IHostKeyAlgorithm
         signatureReader.CheckReadEverything();
 
 
-        var publicKeyReader = new SshPacketDeserializer(publicKey);
+        var publicKeyReader = new SshDeserializer(publicKey);
 
         if (!publicKeyReader.ReadBytesString().SequenceEqual(KeyPrefix))
         {

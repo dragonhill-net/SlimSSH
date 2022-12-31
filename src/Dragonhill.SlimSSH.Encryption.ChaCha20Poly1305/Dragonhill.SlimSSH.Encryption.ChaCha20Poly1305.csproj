@@ -1,14 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net7.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <RootNamespace>Dragonhill.SlimSSH.Algorithms</RootNamespace>
+        <RootNamespace>Dragonhill.SlimSSH</RootNamespace>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' " />
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' " />
 
     <ItemGroup>
       <ProjectReference Include="..\Dragonhill.SlimSSH.Common\Dragonhill.SlimSSH.Common.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="libsodium" Version="1.0.18.2" />
     </ItemGroup>
 
 </Project>

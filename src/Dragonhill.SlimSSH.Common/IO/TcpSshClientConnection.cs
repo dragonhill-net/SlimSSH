@@ -1,4 +1,5 @@
 using Dragonhill.SlimSSH.Algorithms;
+using Dragonhill.SlimSSH.Helpers;
 using System.Net.Sockets;
 
 namespace Dragonhill.SlimSSH.IO;
@@ -9,7 +10,9 @@ public class TcpSshClientConnection
     private readonly string _host;
     private readonly ushort _port;
     private readonly TcpClient _tcpClient = new();
-    private SshTransportOperator? _sshTransportOperator;
+    private SshTransportStream? _sshTransportStream;
+
+    public SshProtocolVersion? PeerVersion => _sshTransportStream?.PeerVersion;
 
     public TcpSshClientConnection(IAvailableSshAlgorithms availableSshAlgorithms, string host, ushort port)
     {
@@ -18,30 +21,45 @@ public class TcpSshClientConnection
         _port = port;
     }
 
-    public async Task Connect(TimeSpan? timeout = null)
+    public async Task Connect(CancellationToken cancellationToken = default)
     {
-        var timeoutTask = timeout != null ? Task.Delay(timeout.Value) : null;
-        var connectTask = _tcpClient.ConnectAsync(_host, _port);
+        await _tcpClient.ConnectAsync(_host, _port, cancellationToken);
 
-        if (timeoutTask != null)
-        {
-            var firstTask = await Task.WhenAny(connectTask, timeoutTask);
+        _sshTransportStream = new SshTransportStream(_availableSshAlgorithms, _tcpClient.GetStream());
 
-            if (firstTask == timeoutTask)
-            {
-                _tcpClient.Dispose();
-                throw new TimeoutException();
-            }
-        }
-
-        await connectTask;
-
-        _sshTransportOperator = new SshTransportOperator(_availableSshAlgorithms, _tcpClient.GetStream(), (stream, algorithmContext) => (new SshPacketReader(stream, algorithmContext), new SshPacketWriter(stream, algorithmContext)));
+        await _sshTransportStream.Connect(cancellationToken);
     }
 
-    public async Task TryReadPacket()
+    public async Task WaitFinish(CancellationToken cancellationToken = default)
     {
-        var packet = await _sshTransportOperator!.ReadPacket();
-        packet?.Dispose();
+        if (_sshTransportStream == null)
+        {
+            throw new InvalidOperationException();
+        }
+
+        if (!await _sshTransportStream.WaitFinish(cancellationToken))
+        {
+            throw _sshTransportStream.FirstRelevantException ?? new InvalidOperationException();
+        }
+    }
+
+    public ValueTask Kill(CancellationToken cancellationToken = default)
+    {
+        if (_sshTransportStream == null)
+        {
+            throw new InvalidOperationException();
+        }
+
+        return _sshTransportStream.Kill(cancellationToken);
+    }
+
+    public ValueTask<bool> Shutdown(string? description = null, CancellationToken cancellationToken = default)
+    {
+        if (_sshTransportStream == null)
+        {
+            throw new InvalidOperationException();
+        }
+
+        return _sshTransportStream.Shutdown(description, cancellationToken);
     }
 }

@@ -1,43 +1,45 @@
-using Dragonhill.SlimSSH.Algorithms;
-using Dragonhill.SlimSSH.IO;
+﻿using Dragonhill.SlimSSH.Algorithms;
 using Dragonhill.SlimSSH.Protocol;
-using System.Buffers;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace Dragonhill.SlimSSH.Helpers;
 
-public struct SshPacketBuilder : IDisposable
+public ref struct SshSerializer
 {
-    private readonly byte[] _buffer;
-    private readonly int _start;
+    private Span<byte> _buffer;
     private int _writeOffset;
 
-    internal SshPacketBuilder(ISshPacketWriter writer, int maxPayloadSize = Constants.RequiredSupportedPayloadSize)
+    private readonly ref SshPacketPlaintextBuffer _plaintextBuffer;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public SshSerializer(Span<byte> buffer)
     {
-        _buffer = ArrayPool<byte>.Shared.Rent(maxPayloadSize + writer.RequiredBytesInFrontOfBuffer + writer.MaxPaddingSize + PacketConstants.PayloadOffset);
-        _start = writer.RequiredBytesInFrontOfBuffer;
-        _writeOffset = _start + PacketConstants.PayloadOffset;
+        _buffer = buffer;
+        _writeOffset = 0;
     }
 
-    public SshPacketBuilder(int payloadSize)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public SshSerializer(ref SshPacketPlaintextBuffer plaintextBuffer)
     {
-        _buffer = ArrayPool<byte>.Shared.Rent(payloadSize + PacketConstants.PayloadOffset);
-        _start = 0;
-        _writeOffset = PacketConstants.PayloadOffset;
+        _plaintextBuffer = ref plaintextBuffer;
+        _buffer = plaintextBuffer.GetWritablePayloadAndPaddingSpan();
+        _writeOffset = 0;
     }
 
-    public SshUnfinishedPacket GetUnfinishedPacket() => new(_buffer, _start, _writeOffset);
-
-    public ReadOnlySpan<byte> GetPayloadSpan()
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ReadOnlySpan<byte> Finish()
     {
-        return _buffer.AsSpan(_start + PacketConstants.PayloadOffset, _writeOffset - _start - PacketConstants.PayloadOffset);
-    }
+        if (!Unsafe.IsNullRef(ref _plaintextBuffer))
+        {
+            _plaintextBuffer.FinishWritingPayload(_writeOffset);
+        }
 
-    public void Dispose()
-    {
-        ArrayPool<byte>.Shared.Return(_buffer);
+
+        var writtenSpan = _buffer[.._writeOffset];
+        _buffer = Span<byte>.Empty;
+        return writtenSpan;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -62,53 +64,36 @@ public struct SshPacketBuilder : IDisposable
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void WriteBytes(ReadOnlySpan<byte> bytes)
+    public void WriteBytes(scoped ReadOnlySpan<byte> bytes)
     {
-        bytes.CopyTo(_buffer.AsSpan(_writeOffset));
+        bytes.CopyTo(_buffer[_writeOffset..]);
         _writeOffset += bytes.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void WriteBytesString(ReadOnlySpan<byte> bytes)
+    public void WriteBytesString(scoped ReadOnlySpan<byte> bytes)
     {
         WriteUint32((uint)bytes.Length);
         WriteBytes(bytes);
     }
 
-    public void WriteUnsignedAsMPint(ReadOnlySpan<byte> bytes)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void WriteUnsignedAsMPint(scoped ReadOnlySpan<byte> bytes)
     {
-        var leadingZeros = 0;
-
-        while (leadingZeros < bytes.Length && bytes[leadingZeros] == 0)
-        {
-            ++leadingZeros;
-        }
-
-        var bytesWithoutLeadingZeros = bytes[leadingZeros..];
-
-        if ((bytesWithoutLeadingZeros[0] & 0x80) != 0)
-        {
-            WriteUint32((uint)(bytesWithoutLeadingZeros.Length + 1));
-            WriteByte(0);
-        }
-        else
-        {
-            WriteUint32((uint)(bytesWithoutLeadingZeros.Length));
-        }
-        WriteBytes(bytesWithoutLeadingZeros);
+        _writeOffset += SshPrimitives.WriteUnsignedAsMPint(bytes, _buffer[_writeOffset..]);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void WriteUint32(uint value)
     {
-        SshPrimitives.WriteUint32(_buffer.AsSpan(_writeOffset, sizeof(uint)), value);
+        SshPrimitives.WriteUint32(_buffer.Slice(_writeOffset, sizeof(uint)), value);
         _writeOffset += sizeof(uint);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void WriteCryptoRandomBytes(int length)
     {
-        RandomNumberGenerator.Fill(_buffer.AsSpan(_writeOffset, length));
+        RandomNumberGenerator.Fill(_buffer.Slice(_writeOffset, length));
         _writeOffset += length;
     }
 
@@ -116,13 +101,13 @@ public struct SshPacketBuilder : IDisposable
     {
         var length = Encoding.UTF8.GetByteCount(str);
         WriteUint32((uint)length);
-        Encoding.UTF8.GetBytes(str, _buffer.AsSpan(_writeOffset, length));
+        Encoding.UTF8.GetBytes(str, _buffer.Slice(_writeOffset, length));
         _writeOffset += length;
     }
 
     public void WriteNameList(IReadOnlyList<IAlgorithmId> algorithms)
     {
-        var lengthSpan = _buffer.AsSpan(_writeOffset, sizeof(uint));
+        var lengthSpan = _buffer.Slice(_writeOffset, sizeof(uint));
         _writeOffset += sizeof(uint);
 
         uint length = 0;
@@ -140,7 +125,7 @@ public struct SshPacketBuilder : IDisposable
                     ++length;
                 }
 
-                idBytes.CopyTo(_buffer.AsSpan(_writeOffset, idBytes.Length));
+                idBytes.CopyTo(_buffer.Slice(_writeOffset, idBytes.Length));
                 _writeOffset += idBytes.Length;
                 length += (uint)idBytes.Length;
             }
@@ -151,7 +136,7 @@ public struct SshPacketBuilder : IDisposable
 
     public void WriteNoneNameList()
     {
-        var target = _buffer.AsSpan(_writeOffset, 8);
+        var target = _buffer.Slice(_writeOffset, 8);
         SshPrimitives.WriteUint32(target, 4);
         target[4] = (byte)'n';
         target[5] = (byte)'o';

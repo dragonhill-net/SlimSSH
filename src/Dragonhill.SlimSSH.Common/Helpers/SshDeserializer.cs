@@ -1,27 +1,26 @@
-using Dragonhill.SlimSSH.Exceptions;
-using Dragonhill.SlimSSH.Localization;
+﻿using Dragonhill.SlimSSH.Exceptions;
 using Dragonhill.SlimSSH.Protocol;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace Dragonhill.SlimSSH.Helpers;
 
-public ref struct SshPacketDeserializer
+public ref struct SshDeserializer
 {
-    private readonly ReadOnlySpan<byte> _payloadBuffer;
+    private readonly ReadOnlySpan<byte> _buffer;
     private int _readOffset;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public SshPacketDeserializer(ReadOnlySpan<byte> payloadBuffer)
+    public SshDeserializer(ReadOnlySpan<byte> buffer)
     {
-        _payloadBuffer = payloadBuffer;
+        _buffer = buffer;
         _readOffset = 0;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public byte ReadByte()
     {
-        var value = _payloadBuffer[_readOffset];
+        var value = _buffer[_readOffset];
         _readOffset += 1;
         return value;
     }
@@ -35,7 +34,7 @@ public ref struct SshPacketDeserializer
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool ReadBoolean()
     {
-        var value = SshPrimitives.ReadBoolean(_payloadBuffer[_readOffset]);
+        var value = SshPrimitives.ReadBoolean(_buffer[_readOffset]);
         ++_readOffset;
         return value;
     }
@@ -43,7 +42,7 @@ public ref struct SshPacketDeserializer
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public uint ReadUint32()
     {
-        var value = SshPrimitives.ReadUint32(_payloadBuffer.Slice(_readOffset, sizeof(uint)));
+        var value = SshPrimitives.ReadUint32(_buffer.Slice(_readOffset, sizeof(uint)));
         _readOffset += sizeof(uint);
         return value;
     }
@@ -51,7 +50,7 @@ public ref struct SshPacketDeserializer
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> ReadBytes(int length)
     {
-        var span = _payloadBuffer.Slice(_readOffset, length);
+        var span = _buffer.Slice(_readOffset, length);
         _readOffset += length;
         return span;
     }
@@ -66,15 +65,15 @@ public ref struct SshPacketDeserializer
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public NameListReader ReadNameList()
     {
-        return new NameListReader(_payloadBuffer, ref _readOffset);
+        return new NameListReader(ReadBytesString());
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void CheckReadEverything()
     {
-        if (_readOffset != _payloadBuffer.Length)
+        if (_readOffset != _buffer.Length)
         {
-            throw new SshException(Strings.Packet_PayloadOutOfRange);
+            SshExceptionThrowHelper.PayloadOutOfRange();
         }
     }
 

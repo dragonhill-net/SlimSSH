@@ -8,7 +8,10 @@ public static class Constants
 
     public const uint MaxAllowedPacketSize = 256 * 1024;
 
+    public const int MinPaddingLength = 4;
+
     public const int RequiredSupportedPayloadSize = 32768;
+    public const int RequiredSupportedRawPacketSize = 35000;
 
     public const int KexAfterBytes = 1024 * 1024 * 1024;
     public const int KexAfterMilliseconds = 60 * 60 * 1000;

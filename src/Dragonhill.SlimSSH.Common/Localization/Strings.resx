@@ -102,4 +102,34 @@
     <data name="Transport_SignatureVerificationFailed" xml:space="preserve">
         <value>Signature verification failed</value>
     </data>
+    <data name="Transport_PeerDisconnect" xml:space="preserve">
+        <value>Peer send disconnect message</value>
+    </data>
+    <data name="Transport_PeerSendUnimplemented" xml:space="preserve">
+        <value>Peer did not understand a message send</value>
+    </data>
+    <data name="Transport_MultiplePriorityMessages" xml:space="preserve">
+        <value>An attempt was made to send a priority (KEX) message while another is queued</value>
+    </data>
+    <data name="ReferenceCountZero" xml:space="preserve">
+        <value>The object has been finally disposed (reference count zero)</value>
+    </data>
+    <data name="Interop_NativeLibraryError" xml:space="preserve">
+        <value>There has been an error with an native library.</value>
+    </data>
+    <data name="Packet_PaddingError" xml:space="preserve">
+        <value>Packet padding error</value>
+    </data>
+    <data name="FifoQueue_Closed" xml:space="preserve">
+        <value>The queue has been closed</value>
+    </data>
+    <data name="Queue_EntryAlreadyInQueue" xml:space="preserve">
+        <value>Queue entry is already used in a queue</value>
+    </data>
+    <data name="UserForceAbort" xml:space="preserve">
+        <value>User forced connection abort.</value>
+    </data>
+    <data name="Transport_UnexpectedDisconnect" xml:space="preserve">
+        <value>Unexpected disconnect packet detected</value>
+    </data>
 </root>

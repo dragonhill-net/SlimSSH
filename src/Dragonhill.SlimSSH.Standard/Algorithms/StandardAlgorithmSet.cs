@@ -13,10 +13,4 @@ public class StandardAlgorithmSet : IAvailableSshAlgorithms
     public IReadOnlyList<IHostKeyAlgorithm> HostKeyAlgorithms => _standardServerHostKeyAlgorithms;
     public IReadOnlyList<ICryptoAlgorithm> CryptoAlgorithms => _standardEncryptionAlgorithms;
     public IReadOnlyList<IMacAlgorithm> MacAlgorithms => _standardMacAlgorithms;
-    public AvailableAlgorithmsMetrics Metrics { get; }
-
-    private StandardAlgorithmSet()
-    {
-        Metrics = new AvailableAlgorithmsMetrics(this);
-    }
 }
